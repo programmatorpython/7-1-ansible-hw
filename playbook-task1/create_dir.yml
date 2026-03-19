@@ -1,0 +1,25 @@
+---
+- name: Создать папку для распаковки Kafka
+  hosts: servers
+  become: yes
+  vars:
+    extract_dir: "/opt/kafka"
+
+  tasks:
+    - name: Создать директорию для распаковки
+      file:
+        path: "{{ extract_dir }}"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+      register: dir_result
+
+    - name: Проверить, что директория создана
+      stat:
+        path: "{{ extract_dir }}"
+      register: dir_check
+
+    - name: Показать информацию о директории
+      debug:
+        msg: "Директория {{ extract_dir }} создана: {{ dir_check.stat.exists }}"

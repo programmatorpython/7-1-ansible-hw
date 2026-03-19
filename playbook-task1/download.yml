@@ -1,0 +1,26 @@
+---
+- name: Скачать архив Apache Kafka
+  hosts: servers
+  become: yes
+  vars:
+    download_url: "https://archive.apache.org/dist/kafka/3.9.0/kafka_2.13-3.9.0.tgz"
+    download_dir: "/tmp"
+    archive_name: "kafka.tgz"
+
+  tasks:
+    - name: Убедиться, что curl установлен
+      apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+    - name: Скачать архив Kafka
+      get_url:
+        url: "{{ download_url }}"
+        dest: "{{ download_dir }}/{{ archive_name }}"
+        mode: '0644'
+      register: download_result
+
+    - name: Показать результат скачивания
+      debug:
+        msg: "Архив скачан: {{ download_result.dest }} (размер: {{ download_result.size }} байт)"

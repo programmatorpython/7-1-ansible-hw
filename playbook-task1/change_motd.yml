@@ -1,0 +1,45 @@
+---
+- name: Изменение приветствия системы (MOTD)
+  hosts: servers
+  become: yes
+  vars:
+    motd_message: |
+      ****************************************************
+      *                                                  *
+      *   Добро пожаловать на сервер!                    *
+      *                                                  *
+      *   Hostname: {{ ansible_hostname }}               *
+      *   IP-адрес: {{ ansible_default_ipv4.address }}   *
+      *                                                  *
+      *                                                  *
+      *                                                  *
+      *                                                  *
+      ****************************************************
+
+  tasks:
+    - name: Создать резервную копию текущего MOTD
+      copy:
+        src: /etc/motd
+        dest: /etc/motd.backup
+        remote_src: yes
+        owner: root
+        group: root
+        mode: '0644'
+      ignore_errors: yes
+
+    - name: Записать новое приветствие в /etc/motd
+      copy:
+        content: "{{ motd_message }}\n"
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Проверить содержимое MOTD
+      command: cat /etc/motd
+      register: motd_content
+      changed_when: false
+
+    - name: Показать новое приветствие
+      debug:
+        var: motd_content.stdout_lines

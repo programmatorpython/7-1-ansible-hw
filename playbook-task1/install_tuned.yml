@@ -1,0 +1,51 @@
+---
+- name: Установка и настройка tuned
+  hosts: servers
+  become: yes
+  
+  tasks:
+    - name: Обновить кеш пакетов
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+    - name: Установить пакет tuned
+      package:
+        name: tuned
+        state: present
+
+    - name: Запустить и добавить в автозагрузку сервис tuned
+      systemd:
+        name: tuned
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Проверить статус сервиса tuned
+      systemd:
+        name: tuned
+        state: started
+      register: tuned_status
+
+    - name: Показать статус tuned
+      debug:
+        msg: "tuned статус: {{ 'запущен' if tuned_status.status.ActiveState == 'active' else 'остановлен' }}"
+
+    - name: Проверить активный профиль tuned
+      command: tuned-adm active
+      register: tuned_profile
+      changed_when: false
+
+    - name: Показать активный профиль
+      debug:
+        msg: "Активный профиль: {{ tuned_profile.stdout }}"
+
+    - name: Список доступных профилей
+      command: tuned-adm list
+      register: tuned_list
+      changed_when: false
+
+    - name: Показать первые 5 профилей
+      debug:
+        msg: "Доступные профили: {{ tuned_list.stdout_lines[0:5] | join(', ') }}..."

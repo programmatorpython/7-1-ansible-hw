@@ -1,0 +1,43 @@
+---
+- name: Распаковать архив Kafka
+  hosts: servers
+  become: yes
+  vars:
+    archive_path: "/tmp/kafka.tgz"
+    extract_dir: "/opt/kafka"
+
+  tasks:
+    - name: Проверить, существует ли архив
+      stat:
+        path: "{{ archive_path }}"
+      register: archive_check
+
+    - name: Остановиться, если архив не найден
+      fail:
+        msg: "Архив {{ archive_path }} не найден! Сначала выполните download.yml"
+      when: not archive_check.stat.exists
+
+    - name: Распаковать архив
+      unarchive:
+        src: "{{ archive_path }}"
+        dest: "{{ extract_dir }}"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+        owner: root
+        group: root
+        mode: '0755'
+      register: extract_result
+
+    - name: Проверить содержимое распакованной папки
+      find:
+        paths: "{{ extract_dir }}"
+        file_type: any
+      register: files_found
+
+    - name: Показать результат распаковки
+      debug:
+        msg: "Распаковано {{ files_found.files | length }} файлов/папок в {{ extract_dir }}"
+
+    - name: Показать первые 5 элементов
+      debug:
+        msg: "Пример содержимого: {{ files_found.files[0:5] | map(attribute='path') | list }}"
