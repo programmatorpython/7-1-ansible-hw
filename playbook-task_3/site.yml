@@ -1,0 +1,25 @@
+---
+- name: Установка веб-сервера Apache с системной информацией
+  hosts: servers
+  become: yes
+  vars:
+    site_name: "system-info"
+    apache_port: 80
+
+  roles:
+    - apache_install
+- name: Финальная проверка доступности сайта
+  hosts: servers
+  become: no
+  tasks:
+    - name: Проверить доступность веб-сайта после установки
+      ansible.builtin.uri:
+        url: "http://{{ ansible_default_ipv4.address }}"
+        method: GET
+        status_code: 200
+        timeout: 10
+      register: final_check
+
+    - name: Вывести результат финальной проверки
+      ansible.builtin.debug:
+        msg: "✅ Сайт http://{{ ansible_default_ipv4.address }} успешно доступен (статус: {{ final_check.status }})"

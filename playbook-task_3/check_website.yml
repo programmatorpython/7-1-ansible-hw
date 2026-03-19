@@ -1,0 +1,62 @@
+---
+- name: Проверка доступности веб-сайта (HTTP 200)
+  hosts: servers
+  become: no  # Не нужны права root для проверки
+  
+  vars:
+    website_url: "http://{{ ansible_default_ipv4.address }}"
+    expected_status: 200
+    
+  tasks:
+    - name: Получить информацию о сервере
+      ansible.builtin.setup:
+        filter:
+          - ansible_default_ipv4
+          - ansible_hostname
+      when: false  # Не выполняем, факты уже собраны
+
+    - name: Проверить доступность веб-сайта
+      ansible.builtin.uri:
+        url: "{{ website_url }}"
+        method: GET
+        status_code: "{{ expected_status }}"
+        timeout: 10
+        validate_certs: no
+      register: website_check
+      ignore_errors: yes
+
+    - name: Показать результат проверки
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "🌐 ПРОВЕРКА ВЕБ-САЙТА"
+          - "=========================================="
+          - "🔗 URL: {{ website_url }}"
+          - "🖥️  Хост: {{ ansible_hostname }}"
+          - "📊 Статус: {{ website_check.status }}"
+          - "✅ Ожидаемый статус: {{ expected_status }}"
+          - "📏 Размер страницы: {{ website_check.content_length | default('неизвестно') }} байт"
+          - "⏱️  Время ответа: {{ website_check.elapsed }} секунд"
+          - "🔍 Результат: {{ '✅ ДОСТУПЕН' if website_check.status == expected_status else '❌ НЕ ДОСТУПЕН' }}"
+          - "=========================================="
+      when: website_check is defined
+
+    - name: Детальная информация при успехе
+      ansible.builtin.debug:
+        msg:
+          - "📋 Заголовки ответа:"
+          - "  - Server: {{ website_check.server | default('неизвестно') }}"
+          - "  - Content-Type: {{ website_check.content_type | default('неизвестно') }}"
+          - "  - Date: {{ website_check.date | default('неизвестно') }}"
+      when: 
+        - website_check is defined
+        - website_check.status == expected_status
+
+    - name: Детальная информация при ошибке
+      ansible.builtin.debug:
+        msg:
+          - "❌ ОШИБКА ПРОВЕРКИ"
+          - "📝 Сообщение: {{ website_check.msg | default('неизвестная ошибка') }}"
+      when: 
+        - website_check is defined
+        - website_check.status != expected_status

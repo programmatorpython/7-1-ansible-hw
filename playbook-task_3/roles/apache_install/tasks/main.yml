@@ -1,0 +1,154 @@
+---
+
+- name: Обновить кеш пакетов
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Удалить Nginx если он установлен
+  ansible.builtin.apt:
+    name: 
+      - nginx
+      - nginx-common
+      - nginx-core
+    state: absent
+    purge: yes
+    autoremove: yes
+  when: ansible_os_family == "Debian"
+  register: nginx_removed
+
+- name: Установить Apache
+  ansible.builtin.apt:
+    name: 
+      - apache2
+      - apache2-utils
+    state: present
+  when: ansible_os_family == "Debian"
+  register: apache_install
+
+- name: Создать директорию для сайта
+  ansible.builtin.file:
+    path: /var/www/html/{{ site_name | default('default') }}
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+    recurse: yes
+  when: ansible_os_family == "Debian"
+
+- name: Скопировать конфигурацию Apache
+  ansible.builtin.template:
+    src: apache.conf.j2
+    dest: /etc/apache2/sites-available/{{ site_name | default('default') }}.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: ansible_os_family == "Debian"
+  notify: restart apache
+
+- name: Отключить дефолтный сайт
+  ansible.builtin.command:
+    cmd: a2dissite 000-default.conf
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+  notify: restart apache
+
+- name: Включить наш сайт
+  ansible.builtin.command:
+    cmd: a2ensite {{ site_name | default('default') }}.conf
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+  notify: restart apache
+
+- name: Скопировать индексный файл
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/html/{{ site_name | default('default') }}/index.html
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  when: ansible_os_family == "Debian"
+  
+
+- name: Включить и запустить Apache
+  ansible.builtin.systemd:
+    name: apache2
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  when: ansible_os_family == "Debian"
+  register: apache_start
+
+- name: Проверить, что Apache слушает порт 80
+  ansible.builtin.wait_for:
+    port: 80
+    host: "{{ ansible_default_ipv4.address }}"
+    timeout: 10
+    delay: 2
+  register: apache_check
+  when: ansible_os_family == "Debian"
+
+- name: Показать результат
+  ansible.builtin.debug:
+    msg: 
+      - "✅ Nginx удален: {{ nginx_removed.changed | default(false) }}"
+      - "✅ Apache установлен и запущен на {{ ansible_hostname }} ({{ ansible_default_ipv4.address }})"
+      - "🌐 Системная информация доступна по адресу: http://{{ ansible_default_ipv4.address }}"
+      - "📊 CPU: {{ ansible_processor_cores }} ядер, {{ ansible_processor[1] | default(ansible_processor[0]) | truncate(50) }}"
+      - "💾 RAM: {{ (ansible_memtotal_mb / 1024) | round(2) }} GB"
+      - "💽 HDD: {{ (ansible_mounts | selectattr('mount', 'equalto', '/') | first).size_total / 1024 / 1024 / 1024 | round(2) }} GB"
+  when: ansible_os_family == "Debian"
+
+- name: Проверить, активен ли ufw (файервол)
+  ansible.builtin.shell: 'ufw status | grep -q "Status: active"'
+  register: ufw_active
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "Debian"
+
+- name: Открыть порт 80 в ufw
+  ansible.builtin.shell: ufw allow 80/tcp
+  when: 
+    - ansible_os_family == "Debian"
+    - ufw_active.rc == 0
+  register: ufw_result
+
+- name: Проверить, активен ли firewalld
+  ansible.builtin.shell: systemctl is-active firewalld
+  register: firewalld_active
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+
+- name: Открыть порт 80 в firewalld
+  ansible.builtin.shell: |
+    firewall-cmd --permanent --add-port=80/tcp
+    firewall-cmd --reload
+  when: 
+    - ansible_os_family == "RedHat"
+    - firewalld_active.rc == 0
+  register: firewalld_result
+
+- name: Убедиться, что Apache добавлен в автозагрузку
+  ansible.builtin.systemd:
+    name: apache2
+    enabled: yes
+  when: ansible_os_family == "Debian"
+  register: enabled_check
+
+- name: Проверить, что порт 80 доступен извне
+  ansible.builtin.uri:
+    url: "http://{{ ansible_default_ipv4.address }}"
+    method: GET
+    status_code: 200
+  register: website_check
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+
+- name: Сообщить о доступности сайта
+  ansible.builtin.debug:
+    msg: 
+      - "🌐 Сайт доступен по адресу: http://{{ ansible_default_ipv4.address }}"
+      - "🔌 Порт 80 открыт в файерволе: {{ 'Да' if ufw_result is defined else 'Не требуется (ufw не активен)' }}"
+      - "🚀 Apache добавлен в автозагрузку: {{ enabled_check.changed | default(false) }}"

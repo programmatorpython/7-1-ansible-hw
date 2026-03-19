@@ -1,0 +1,15 @@
+---
+
+apache_packages:
+  Debian: apache2
+  RedHat: httpd
+
+
+apache_users:
+  Debian: www-data
+  RedHat: apache
+
+
+apache_services:
+  Debian: apache2
+  RedHat: httpd

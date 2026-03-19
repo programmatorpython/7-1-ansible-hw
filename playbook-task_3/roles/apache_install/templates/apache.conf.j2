@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+# Apache configuration for {{ site_name | default('default') }}
+
+<VirtualHost *:{{ apache_port | default(80) }}>
+    ServerName {{ ansible_hostname }}
+    ServerAdmin webmaster@localhost
+    
+    DocumentRoot /var/www/html/{{ site_name | default('default') }}
+    
+    <Directory /var/www/html/{{ site_name | default('default') }}>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+    
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet

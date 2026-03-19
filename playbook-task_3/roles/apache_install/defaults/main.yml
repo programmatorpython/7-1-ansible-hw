@@ -1,0 +1,10 @@
+---
+
+site_name: "default"
+
+apache_port: 80
+
+
+page_title: "Добро пожаловать на сервер!"
+
+welcome_message: "Сервер управляется с помощью Ansible"
