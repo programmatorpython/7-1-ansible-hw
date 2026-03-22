@@ -13,17 +13,24 @@
 
 #### Скачивание Apache Kafka:
 **Файл плейбука:** [`playbook-task_1_2/download.yml`](playbook-task_1_2/download.yml)
+
 ![Скриншот-1](/img/2026-03-19_19-42-00.png)
 
 #### Создание директории:
+**Файл плейбука:** [`playbook-task_1_2/create_dir.yml`](playbook-task_1_2/create_dir.yml)
+
 ![Скриншот-2](/img/2026-03-19_20-34-30.png)
 
 #### Распаковка архива:
+**Файл плейбука:** [`playbook-task_1_2/extract.yml`](playbook-task_1_2/extract.yml)
+
 ![Скриншот-3](/img/2026-03-19_20-39-53.png)
 
 2. `Установить пакет tuned из стандартного репозитория вашей ОС. Запустить его, как демон — конфигурационный файл systemd появится автоматически при установке. Добавить tuned в автозагрузку.`
 
 #### Установка tuned:
+**Файл плейбука:** [`playbook-task_1_2/install_tuned.yml`](playbook-task_1_2/install_tuned.yml)
+
 ![Скриншот-4](/img/2026-03-19_21-08-10.png)
 
 
@@ -31,6 +38,8 @@
 
 
 #### Изменение приветствия:
+**Файл плейбука:** [`playbook-task_1_2/change_motd.yml`](playbook-task_1_2/change_motd.yml)
+
 ![Скриншот-4](/img/2026-03-19_21-14-56.png)
 
 ---
@@ -42,6 +51,8 @@
 `Модифицируйте плейбук из пункта 3, задания 1. В качестве приветствия он должен установить IP-адрес и hostname управляемого хоста, пожелание хорошего дня системному администратору.`
 
 #### Изменение приветствия - hostname, IP:
+**Файл плейбука:** [`playbook-task_1_2/change_motd.yml`](playbook-task_1_2/change_motd.yml)
+
 ![Скриншот-4](/img/2026-03-19_21-22-26.png)
 
 
@@ -58,23 +69,32 @@
 1. `Установить веб-сервер Apache на управляемые хосты.`
 
 #### Команда установки Apache:
+**Файл с задачами:** [`playbook-task_3/roles/apache_install/tasks/main.yml`](playbook-task_3/roles/apache_install/tasks/main.yml)
+
 ![Скриншот-5](/img/2026-03-20_00-15-25.png)
 
 2. `Сконфигурировать файл index.html c выводом характеристик каждого компьютера как веб-страницу по умолчанию для Apache. Необходимо включить CPU, RAM,  величину первого HDD, IP-адрес. Используйте Ansible facts и jinja2-template. Необходимо реализовать handler: перезапуск Apache только в случае изменения файла конфигурации Apache.`
 
 #### Конфигурация файла index.html:
+**Файл шаблона:** [`playbook-task_3/roles/apache_install/templates/index.html.j2`](playbook-task_3/roles/apache_install/templates/index.html.j2)
+
+#### Обработчик перезапуска Apache
+**Файл handlers:** [`playbook-task_3/roles/apache_install/handlers/main.yml`](playbook-task_3/roles/apache_install/handlers/main.yml)
+
 ![Скриншот-6](/img/2026-03-20_00-45-30.png)
 
 
 3. `Открыть порт 80, если необходимо, запустить сервер и добавить его в автозагрузку.`
 
-#### Проверка порта:
-![Скриншот-7](/img/2026-03-20_01-15-21.png)
+#### Задачи по открытию порта и запуску сервера:
+**Файл с задачами:** [`playbook-task_3/roles/apache_install/tasks/main.yml`](playbook-task_3/roles/apache_install/tasks/main.yml)
 
 
 4. `Сделать проверку доступности веб-сайта (ответ 200, модуль uri).`
 
-#### Проверка доступности:
+#### Проверка доступности (модуль uri):
+**Файл с задачами:** [`playbook-task_3/roles/apache_install/tasks/main.yml`](playbook-task_3/roles/apache_install/tasks/main.yml)
+
 ![Скриншот-7](/img/2026-03-20_01-15-21.png)
 
 `Предоставьте скриншот браузера, отображающего сконфигурированный index.html в качестве сайта.`
